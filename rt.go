@@ -18,34 +18,38 @@ var (
 	addr = flag.Bool("addr", false, "find open address and print to final-port.txt")
 )
 
-type Page struct {
+type Translation struct {
 	Title string
-	Body  []byte
+	Source  []byte
+	Target  []byte
 }
 
-func (p *Page) save() error {
-	filename := p.Title + ".txt"
-	return ioutil.WriteFile(filename, p.Body, 0600)
+func (tr *Translation) save() error {
+	filename := tr.Title + "_t.txt"
+	return ioutil.WriteFile(filename, tr.Target, 0600)
 }
 
-func loadPage(title string) (*Page, error) {
+//This is a comment
+func loadPage(title string) (*Translation, error) {
 	filename := title + ".txt"
-	body, err := ioutil.ReadFile(filename)
+	source, err := ioutil.ReadFile(filename)
+	filename_target := title + "_t.txt"
+	target, err := ioutil.ReadFile(filename_target)
 	if err != nil {
 		return nil, err
 	}
-	return &Page{Title: title, Body: body}, nil
+	return &Translation{Title: title, Source: source, Target: target}, nil
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, _ := loadPage(title)
-	renderTemplate(w, "main", p)
+	tr, _ := loadPage(title)
+	renderTemplate(w, "main", tr)
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
-	body := r.FormValue("body")
-	p := &Page{Title: title, Body: []byte(body)}
-	err := p.save()
+	target := r.FormValue("target")
+	tr := &Translation{Title: title, Source: []byte(target), Target: []byte(target)}
+	err := tr.save()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,8 +59,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 
 var templates = template.Must(template.ParseFiles("main.html"))
 
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+func renderTemplate(w http.ResponseWriter, tmpl string, tr *Translation) {
+	err := templates.ExecuteTemplate(w, tmpl+".html", tr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
